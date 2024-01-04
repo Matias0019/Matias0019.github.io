@@ -118,24 +118,57 @@
         /* ----------------------------------------------------------- */
 
 		$("#contactform").on("submit", function() {
-			this.reset();
-			$("#message").text("Sending...");
+			
+			//$("#message").text("Sending...");
 			var form = $(this);
-			$.ajax({
-				url: form.attr("action"),
-				method: form.attr("method"),
-				data: form.serialize(),
-				success: function(result) {
-					if (result === "success") {
-						$("#contactform").find(".output_message").addClass("success");
-						$("#message").text("Message Sent!");
+			// $.ajax({
+			// 	url: form.attr("action"),
+			// 	method: form.attr("method"),
+			// 	data: form.serialize(),
+			// 	success: function(result) {
+			// 		if (result === "success") {
+			// 			$("#contactform").find(".output_message").addClass("success");
+			// 			$("#message").text("Message Sent!");
+			// 		} else {
+			// 			$("#contactform").find(".output_message").addClass("error");
+			// 			$("#message").text("Error Sending!");
+			// 		}
+			// 	}
+			// });
+			// return false;
+			var status = $("#message");
+    		status.text("Sending...");
+			async function handleSubmit(event) {
+				event.preventDefault();
+				var data = new FormData(form[0]);
+		
+				try {
+					var response = await fetch(form.attr("action"), {
+						method: form.attr("method"),
+						body: data,
+						headers: {
+							'Accept': 'application/json'
+						}
+					});
+		
+					if (response.ok) {
+						status.removeClass("error").addClass("success").text("Thanks for your submission!");
+						form.reset();
 					} else {
-						$("#contactform").find(".output_message").addClass("error");
-						$("#message").text("Error Sending!");
+						var responseData = await response.json();
+						if (responseData.errors) {
+							status.removeClass("success").addClass("error").text(responseData.errors.map(error => error.message).join(", "));
+						} else {
+							status.removeClass("success").addClass("error").text("Oops! There was a problem submitting your form");
+						}
 					}
+				} catch (error) {
+					status.removeClass("success").addClass("error").text("Oops! There was a problem submitting your form");
 				}
-			});
-			return false;
+			}
+		
+			form.on("submit", handleSubmit);
+			form.reset();
 		});
 
 	});
